@@ -9,10 +9,8 @@ from pathlib import Path
 from datetime import timedelta
 from tqdm import tqdm
 from opencc import OpenCC
-import argparse
-import sys
 
-cc = OpenCC('s2t')
+cc = OpenCC('s2t')  # 簡體轉繁體
 
 def format_timestamp(seconds, for_vtt=False):
     td = timedelta(seconds=float(seconds))
@@ -110,45 +108,42 @@ def transcribe_file(input_path, language, model, parent_folder):
 
     print(f"✅ 完成：{zip_path}")
 
-def main():
-    parser = argparse.ArgumentParser(description="Whisper 批次轉檔工具")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--input-folder', type=str, help='指定要處理的資料夾')
-    group.add_argument('--input-file', type=str, help='指定單一檔案')
-    parser.add_argument('--model', type=str, default='base', choices=['base', 'medium', 'large-v2'], help='Whisper 模型')
-    parser.add_argument('--device', type=str, default='auto', choices=['auto', 'cpu', 'cuda'], help='運算裝置')
-    parser.add_argument('--language', type=str, default='Chinese', choices=['Chinese', 'English'], help='語音語言')
-    parser.add_argument('--no-prompt', action='store_true', help='不進行覆蓋詢問，適合自動化')
-    args = parser.parse_args()
+if __name__ == "__main__":
+    input_path = input("請輸入檔案或資料夾完整路徑：").strip('"').strip()
+    if not os.path.exists(input_path):
+        print("檔案或資料夾不存在。")
+        exit()
 
-    # 裝置判斷
-    device = None
-    if args.device == 'auto':
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("請選擇語言：\n1. 中文\n2. 英文")
+    lang_choice = input("輸入數字 [1-2]，預設為 1：").strip()
+    language = "English" if lang_choice == "2" else "Chinese"
+
+    print("\n請選擇模型：\n1. base\n2. medium\n3. large-v2")
+    model_map = {"1": "base", "2": "medium", "3": "large-v2"}
+    model_choice = model_map.get(input("輸入數字 [1-3]，預設為 1：").strip(), "base")
+
+    print("\n選擇運算裝置：\n1. 自動\n2. 強制 CPU\n3. 強制 GPU")
+    device_choice = input("輸入數字 [1-3]，預設為 1：").strip()
+    if device_choice == "2":
+        device = "cpu"
+    elif device_choice == "3" and torch.cuda.is_available():
+        device = "cuda"
     else:
-        device = args.device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    print(f"\n使用裝置：{device.upper()}，模型：{args.model}，語言：{args.language}")
-    model = whisper.load_model(args.model, device=device)
+    print(f"\n使用裝置：{device.upper()}，模型：{model_choice}，語言：{language}")
+    model = whisper.load_model(model_choice, device=device)
 
+    input_path_obj = Path(input_path)
     exts = (".mp3", ".mp4", ".m4a", ".wav")
 
-    # 單一檔案
-    if args.input_file:
-        input_path = Path(args.input_file)
-        if not input_path.exists():
-            print("檔案不存在。")
-            sys.exit(1)
-        transcribe_file(str(input_path), args.language, model, input_path.parent)
-    else:
-        input_folder = Path(args.input_folder)
-        if not input_folder.exists():
-            print("資料夾不存在。")
-            sys.exit(1)
-        files = [f for f in input_folder.glob("*") if f.suffix.lower() in exts]
-        # 列出將被覆蓋的 zip
-        existing_zips = [f"{f.stem}.zip" for f in files if (input_folder / f"{f.stem}.zip").exists()]
-        if existing_zips and not args.no_prompt:
+    if input_path_obj.is_file():
+        transcribe_file(str(input_path_obj), language, model, input_path_obj.parent)
+    elif input_path_obj.is_dir():
+        files = [f for f in input_path_obj.glob("*") if f.suffix.lower() in exts]
+        # 先列出所有將被覆蓋的 zip 檔案
+        existing_zips = [f"{f.stem}.zip" for f in files if (input_path_obj / f"{f.stem}.zip").exists()]
+        if existing_zips:
             print("⚠️ 以下 zip 檔案已存在：")
             for name in existing_zips:
                 print("   -", name)
@@ -156,13 +151,11 @@ def main():
             cont = input("輸入選項 [1-2]：").strip()
             if cont == "2":
                 print("已取消。")
-                sys.exit(0)
+                exit()
         for media_file in tqdm(files, desc="批次處理中", ncols=80):
             try:
-                transcribe_file(str(media_file), args.language, model, input_folder)
+                transcribe_file(str(media_file), language, model, input_path_obj)
             except Exception as e:
                 print(f"❌ 轉換失敗：{media_file.name} ({e})")
-
-if __name__ == "__main__":
-    main()
-
+    else:
+        print("不支援的路徑格式。")
