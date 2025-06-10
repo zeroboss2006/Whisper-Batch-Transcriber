@@ -57,7 +57,6 @@ pip install -r requirements.txt
 拖曳資料夾或單一檔案到 run_whisper_auto.bat 上執行
 或在 cmd 中：
 ```bat
-複製
 cd src
 run_whisper_auto.bat C:\path\to\media
 ```
