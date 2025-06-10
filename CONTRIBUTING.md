@@ -1,0 +1,43 @@
+# 貢獻指南（Contributing Guide）
+
+歡迎參與 Whisper Batch Transcriber 專案！  
+你可以回報錯誤、提出建議、或直接提交 Pull Request。
+
+---
+
+## 🛠 貢獻方式
+
+1. **Fork 本專案**  
+   點選 GitHub 頁面右上角的 Fork。
+
+2. **建立開發分支**  
+   命名建議：`feature/xxx` 或 `fix/xxx`。
+
+3. **提交程式碼**  
+   - 請確保通過 Python 格式檢查（如 `flake8`）。
+   - 建議執行測試（若有）。
+   - 建議在 PR 說明中簡要描述修改內容與用途。
+
+4. **發送 Pull Request (PR)**  
+   - 比較分支請選擇 `main` 或專案說明指定分支。
+   - 提交後請耐心等候審查與回饋。
+
+---
+
+## 📦 專案規範
+
+- **程式語言**：請使用 Python 3.9 以上版本。
+- **風格**：建議遵守 PEP8 標準。
+- **套件管理**：如需新增依賴，請一併更新 `requirements.txt`。
+- **Commit 訊息**：請清楚描述本次修改目的與重點。
+- **文件說明**：若有用戶影響的重大變動，請更新 `README.md` 或 Changelog。
+
+---
+
+## 🧪 測試建議
+
+- 若修改程式核心功能，請協助新增或調整對應單元測試（於 `tests/` 目錄）。
+- 建議本地執行：
+  ```bash
+  flake8 src/
+  pytest tests/
